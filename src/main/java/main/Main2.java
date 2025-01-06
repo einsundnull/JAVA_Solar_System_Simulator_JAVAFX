@@ -31,7 +31,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-public class Main extends Application {
+public class Main2 extends Application {
 
 	private static final double CAMERA_SPEED = 10;
 	private static final double CAMERA_SPEED_SCROLL = 50;
@@ -272,6 +272,7 @@ public class Main extends Application {
 					jupiterToIoMover.update(timeSpeed);
 					jupiterToEuropaMover.update(timeSpeed);
 
+					
 					ringJupiter.update(saturn);
 
 					System.out.println(cameraMover.getMovedObject().getTranslateX());
@@ -280,21 +281,12 @@ public class Main extends Application {
 						camera.setTranslateX(cameraX + cameraMover.getMovedObject().getTranslateX());
 						camera.setTranslateY(cameraY + cameraMover.getMovedObject().getTranslateY());
 						camera.setTranslateZ(cameraZ + cameraMover.getMovedObject().getTranslateZ());
+					} else {			
+						cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));				
+						cameraMover.getMovedObject().setTranslateX(cameraX);
+						cameraMover.getMovedObject().setTranslateY(cameraY);
+						cameraMover.getMovedObject().setTranslateZ(cameraZ);			
 					}
-//					if (moveCamaraAllong) {
-//					    // Gradually move the camera to follow the cameraObject
-//					    double targetX = cameraMover.getMovedObject().getTranslateX();
-//					    double targetY = cameraMover.getMovedObject().getTranslateY();
-//					    double targetZ = cameraMover.getMovedObject().getTranslateZ();
-//
-//					    cameraX = lerp(cameraX, targetX, 0.1); // Smoothly transition position
-//					    cameraY = lerp(cameraY, targetY, 0.1);
-//					    cameraZ = lerp(cameraZ, targetZ, 0.1);
-//
-//					    camera.setTranslateX(cameraX);
-//					    camera.setTranslateY(cameraY);
-//					    camera.setTranslateZ(cameraZ);
-//					}
 
 					// Update rotators and precessors
 					sunRotator.updateRotation(timeSpeed);
@@ -406,8 +398,14 @@ public class Main extends Application {
 		camera.setTranslateZ(cameraZ);
 
 		camera.getTransforms().setAll(rotateYaw, rotatePitch);
-		addaptCameraMoverToCameraPosition();
-
+		cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));				
+		cameraMover.getMovedObject().setTranslateX(cameraX);
+		cameraMover.getMovedObject().setTranslateY(cameraY);
+		cameraMover.getMovedObject().setTranslateZ(cameraZ);	
+		
+//		cameraX = 0;
+//		cameraY = 0;
+//		cameraZ = 0;
 	}
 
 	private void setPlanets() {
@@ -674,9 +672,18 @@ public class Main extends Application {
 		});
 
 		scene.setOnScroll(event -> {
-			double dz = event.getDeltaY() > 0 ? CAMERA_SPEED_SCROLL : -CAMERA_SPEED_SCROLL;
+			double dz = 0;
+
+			// Check if the user is scrolling up or down
+			if (event.getDeltaY() > 0) {
+				dz = CAMERA_SPEED_SCROLL; // Scroll up = move forward
+			} else if (event.getDeltaY() < 0) {
+				dz = -CAMERA_SPEED_SCROLL; // Scroll down = move backward
+			}
 
 			// Transform direction based on camera's rotation (yaw)
+			// Using yaw (rotation around Y-axis) to determine the direction the camera is
+			// looking
 			double sinYaw = Math.sin(Math.toRadians(yaw));
 			double cosYaw = Math.cos(Math.toRadians(yaw));
 
@@ -686,28 +693,14 @@ public class Main extends Application {
 
 			// Update the camera's position based on its current orientation and scroll
 			// input
+			
 			cameraX += forwardX;
 			cameraZ += forwardZ;
+			camera.setTranslateX(camera.getTranslateX() + cameraX);
+			camera.setTranslateZ(camera.getTranslateZ() + cameraZ);
 
-			addaptCameraMoverToCameraPosition();
-
-			camera.setTranslateX(cameraX);
-			camera.setTranslateZ(cameraZ);
 		});
 
-	}
-
-	private void addaptCameraMoverToCameraPosition() {
-		// TODO Auto-generated method stub
-		if (moveCamaraAllong) {
-//			cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));
-			cameraMover.getMovedObject().setTranslateX(cameraX);
-			cameraMover.getMovedObject().setTranslateY(cameraY);
-			cameraMover.getMovedObject().setTranslateZ(cameraZ);
-			cameraX = cameraMover.getMovedObject().getTranslateX();
-			cameraY = cameraMover.getMovedObject().getTranslateY();
-			cameraZ = cameraMover.getMovedObject().getTranslateZ();
-		}
 	}
 
 	private void handleKeyboardInput(Scene scene, PerspectiveCamera camera) {
@@ -741,7 +734,11 @@ public class Main extends Application {
 
 			} else if (event.getCode() == KeyCode.C) {
 				moveCamaraAllong = !moveCamaraAllong;
-				addaptCameraMoverToCameraPosition();
+				if (!moveCamaraAllong) {
+					cameraX = cameraMover.getMovedObject().getTranslateX();
+					cameraY = cameraMover.getMovedObject().getTranslateY();
+					cameraZ = cameraMover.getMovedObject().getTranslateZ();
+				}
 			}
 
 			// Transform direction based on camera's rotation
@@ -758,26 +755,11 @@ public class Main extends Application {
 			cameraY += dy;
 			cameraZ += forwardZ + strafeZ;
 
-			camera.setTranslateX(cameraX);
-			camera.setTranslateY(cameraY);
-			camera.setTranslateZ(cameraZ);
-
-			addaptCameraMoverToCameraPosition();
+			camera.setTranslateX(camera.getTranslateX() + cameraX);
+			camera.setTranslateY(camera.getTranslateY() + cameraY);
+			camera.setTranslateZ(camera.getTranslateZ() + cameraZ);
 		});
 	}
-	
-	private double lerp(double start, double end, double alpha) {
-	    return start + (end - start) * alpha;
-	}
-
-	private Point3D lerpPosition(Point3D start, Point3D end, double alpha) {
-	    return new Point3D(
-	        lerp(start.getX(), end.getX(), alpha),
-	        lerp(start.getY(), end.getY(), alpha),
-	        lerp(start.getZ(), end.getZ(), alpha)
-	    );
-	}
-
 
 	private void increaseTimeSpeed() {
 		timeSpeed += 10; // Increase speed by 10%

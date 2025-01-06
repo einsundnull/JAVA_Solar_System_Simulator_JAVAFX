@@ -31,7 +31,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-public class Main extends Application {
+public class Main3 extends Application {
 
 	private static final double CAMERA_SPEED = 10;
 	private static final double CAMERA_SPEED_SCROLL = 50;
@@ -282,18 +282,18 @@ public class Main extends Application {
 						camera.setTranslateZ(cameraZ + cameraMover.getMovedObject().getTranslateZ());
 					}
 //					if (moveCamaraAllong) {
-//					    // Gradually move the camera to follow the cameraObject
-//					    double targetX = cameraMover.getMovedObject().getTranslateX();
-//					    double targetY = cameraMover.getMovedObject().getTranslateY();
-//					    double targetZ = cameraMover.getMovedObject().getTranslateZ();
+//						// Gradually move the camera to follow the cameraObject
+//						double targetX = cameraMover.getMovedObject().getTranslateX();
+//						double targetY = cameraMover.getMovedObject().getTranslateY();
+//						double targetZ = cameraMover.getMovedObject().getTranslateZ();
 //
-//					    cameraX = lerp(cameraX, targetX, 0.1); // Smoothly transition position
-//					    cameraY = lerp(cameraY, targetY, 0.1);
-//					    cameraZ = lerp(cameraZ, targetZ, 0.1);
+//						cameraX = lerp(cameraX, targetX, 0.1); // Smoothly transition position
+//						cameraY = lerp(cameraY, targetY, 0.1);
+//						cameraZ = lerp(cameraZ, targetZ, 0.1);
 //
-//					    camera.setTranslateX(cameraX);
-//					    camera.setTranslateY(cameraY);
-//					    camera.setTranslateZ(cameraZ);
+//						camera.setTranslateX(cameraX);
+//						camera.setTranslateY(cameraY);
+//						camera.setTranslateZ(cameraZ);
 //					}
 
 					// Update rotators and precessors
@@ -693,20 +693,39 @@ public class Main extends Application {
 
 			camera.setTranslateX(cameraX);
 			camera.setTranslateZ(cameraZ);
+			cameraMover.setTranslation(cameraX, cameraY, cameraZ);
+			cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));
 		});
 
 	}
 
 	private void addaptCameraMoverToCameraPosition() {
-		// TODO Auto-generated method stub
 		if (moveCamaraAllong) {
-//			cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));
-			cameraMover.getMovedObject().setTranslateX(cameraX);
-			cameraMover.getMovedObject().setTranslateY(cameraY);
-			cameraMover.getMovedObject().setTranslateZ(cameraZ);
-			cameraX = cameraMover.getMovedObject().getTranslateX();
-			cameraY = cameraMover.getMovedObject().getTranslateY();
-			cameraZ = cameraMover.getMovedObject().getTranslateZ();
+			// Get the cameraObject's current position
+			double targetX = cameraMover.getMovedObject().getTranslateX();
+			double targetY = cameraMover.getMovedObject().getTranslateY();
+			double targetZ = cameraMover.getMovedObject().getTranslateZ();
+
+			// Interpolate camera's current position to smoothly move to the target position
+			cameraX = lerp(cameraX, targetX, 0.1); // Adjust alpha (0.1) for smoothness
+			cameraY = lerp(cameraY, targetY, 0.1);
+			cameraZ = lerp(cameraZ, targetZ, 0.1);
+
+			// Smoothly align camera orientation (yaw and pitch can be interpolated too if
+			// needed)
+			yaw = lerp(yaw, 0, 0.1); // Adjust yaw gradually (replace 0 with a target yaw if needed)
+			pitch = lerp(pitch, 0, 0.1);
+
+			// Update camera position and rotation
+			camera.setTranslateX(cameraX);
+			camera.setTranslateY(cameraY);
+			camera.setTranslateZ(cameraZ);
+
+			Rotate rotateYaw = new Rotate(yaw, Rotate.Y_AXIS);
+			Rotate rotatePitch = new Rotate(pitch, Rotate.X_AXIS);
+			camera.getTransforms().setAll(rotateYaw, rotatePitch);
+			cameraMover.setTranslation(cameraX, cameraY, cameraZ);
+			cameraObject.setPosition(new Vector3D(cameraX, cameraY, cameraZ));
 		}
 	}
 
@@ -765,19 +784,15 @@ public class Main extends Application {
 			addaptCameraMoverToCameraPosition();
 		});
 	}
-	
+
 	private double lerp(double start, double end, double alpha) {
-	    return start + (end - start) * alpha;
+		return start + (end - start) * alpha;
 	}
 
 	private Point3D lerpPosition(Point3D start, Point3D end, double alpha) {
-	    return new Point3D(
-	        lerp(start.getX(), end.getX(), alpha),
-	        lerp(start.getY(), end.getY(), alpha),
-	        lerp(start.getZ(), end.getZ(), alpha)
-	    );
+		return new Point3D(lerp(start.getX(), end.getX(), alpha), lerp(start.getY(), end.getY(), alpha),
+				lerp(start.getZ(), end.getZ(), alpha));
 	}
-
 
 	private void increaseTimeSpeed() {
 		timeSpeed += 10; // Increase speed by 10%

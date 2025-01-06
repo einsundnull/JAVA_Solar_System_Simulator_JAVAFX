@@ -50,6 +50,12 @@ public class Mover {
 		shapeToMove.setTranslateZ(z);
 	}
 	
+	public void setTranslation(double x, double y , double z) {
+		shapeToMove.setTranslateX(x);
+		shapeToMove.setTranslateY(y); // Update Y-axis
+		shapeToMove.setTranslateZ(z);
+	}
+	
 	public Node getMovedObject() {
 		return shapeToMove;
 	}
