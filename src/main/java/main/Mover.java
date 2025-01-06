@@ -49,4 +49,8 @@ public class Mover {
 		shapeToMove.setTranslateY(y); // Update Y-axis
 		shapeToMove.setTranslateZ(z);
 	}
+	
+	public Node getMovedObject() {
+		return shapeToMove;
+	}
 }

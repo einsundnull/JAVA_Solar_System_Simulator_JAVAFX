@@ -2,6 +2,8 @@ package main;
 
 import java.util.ArrayList;
 
+import org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14NMethod;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -35,6 +37,7 @@ public class Main extends Application {
 	private static final double CAMERA_SPEED_SCROLL = 50;
 	private static final double MOUSE_SENSITIVITY = 0.1;
 
+	private double cameraX,cameraY,cameraZ;
 	private double mouseX, mouseY;
 	private double yaw = 63.80; // Set yaw to 103.1
 	private double pitch = 63.80; // Set pitch to -90.0
@@ -62,6 +65,8 @@ public class Main extends Application {
 	private PhysicsSphere io;
 	private PhysicsSphere europa;
 	private PhysicsSphere sun;
+
+	private PhysicsSphere cameraObject;
 
 	private Trace sunTrace;
 	private Trace mercuryTrace;
@@ -114,49 +119,48 @@ public class Main extends Application {
 	private Precessor uranusPrecessor;
 	private Precessor neptunePrecessor;
 
-	private static final double MERCURY_RADIUS = 2.4397;  // Mercury radius in km
-	private static final double VENUS_RADIUS = 6.0518;    // Venus radius in km
-	private static final double EARTH_RADIUS = 6.371;     // Earth radius in km
-	private static final double MARS_RADIUS = 3.3895;     // Mars radius in km
-	private static final double JUPITER_RADIUS = 69.911;  // Jupiter radius in km
-	private static final double SATURN_RADIUS = 58.232;   // Saturn radius in km
-	private static final double URANUS_RADIUS = 25.362;   // Uranus radius in km
-	private static final double NEPTUNE_RADIUS = 24.622;  // Neptune radius in km
-	private static final double MOON_RADIUS = 1.7371;     // Moon radius in km
+	private static final double MERCURY_RADIUS = 2.4397; // Mercury radius in km
+	private static final double VENUS_RADIUS = 6.0518; // Venus radius in km
+	private static final double EARTH_RADIUS = 6.371; // Earth radius in km
+	private static final double MARS_RADIUS = 3.3895; // Mars radius in km
+	private static final double JUPITER_RADIUS = 69.911; // Jupiter radius in km
+	private static final double SATURN_RADIUS = 58.232; // Saturn radius in km
+	private static final double URANUS_RADIUS = 25.362; // Uranus radius in km
+	private static final double NEPTUNE_RADIUS = 24.622; // Neptune radius in km
+	private static final double MOON_RADIUS = 1.7371; // Moon radius in km
 
 	// Constants for the orbital distances of planets (in millions of kilometers)
-	private static final double MERCURY_DISTANCE = 57.91;  // Mercury's distance from the Sun in millions of km
-	private static final double VENUS_DISTANCE = 108.2;    // Venus's distance from the Sun in millions of km
-	private static final double EARTH_DISTANCE = 149.6;    // Earth's distance from the Sun in millions of km
-	private static final double MARS_DISTANCE = 227.9;     // Mars's distance from the Sun in millions of km
-	private static final double JUPITER_DISTANCE = 778.6;  // Jupiter's distance from the Sun in millions of km
-	private static final double SATURN_DISTANCE = 1434;    // Saturn's distance from the Sun in millions of km
-	private static final double URANUS_DISTANCE = 2871;    // Uranus's distance from the Sun in millions of km
-	private static final double NEPTUNE_DISTANCE = 4495;   // Neptune's distance from the Sun in millions of km
-	private static final double MOON_DISTANCE = 0.3844;    // Moon's distance from Earth in millions of km
+	private static final double MERCURY_DISTANCE = 57.91; // Mercury's distance from the Sun in millions of km
+	private static final double VENUS_DISTANCE = 108.2; // Venus's distance from the Sun in millions of km
+	private static final double EARTH_DISTANCE = 149.6; // Earth's distance from the Sun in millions of km
+	private static final double MARS_DISTANCE = 227.9; // Mars's distance from the Sun in millions of km
+	private static final double JUPITER_DISTANCE = 778.6; // Jupiter's distance from the Sun in millions of km
+	private static final double SATURN_DISTANCE = 1434; // Saturn's distance from the Sun in millions of km
+	private static final double URANUS_DISTANCE = 2871; // Uranus's distance from the Sun in millions of km
+	private static final double NEPTUNE_DISTANCE = 4495; // Neptune's distance from the Sun in millions of km
+	private static final double MOON_DISTANCE = 0.3844; // Moon's distance from Earth in millions of km
 
 	// Constants for orbital periods (in days)
-	private static final double MERCURY_PERIOD = 87.97;    // Mercury orbital period in days
-	private static final double VENUS_PERIOD = 224.7;      // Venus orbital period in days
-	private static final double EARTH_PERIOD = 365.24;     // Earth orbital period in days
-	private static final double MARS_PERIOD = 687;         // Mars orbital period in days
-	private static final double JUPITER_PERIOD = 4333;     // Jupiter orbital period in days
-	private static final double SATURN_PERIOD = 10759;     // Saturn orbital period in days
-	private static final double URANUS_PERIOD = 30687;     // Uranus orbital period in days
-	private static final double NEPTUNE_PERIOD = 60190;    // Neptune orbital period in days
-	private static final double MOON_PERIOD = 27.3;       // Moon orbital period around Earth in days
+	private static final double MERCURY_PERIOD = 87.97; // Mercury orbital period in days
+	private static final double VENUS_PERIOD = 224.7; // Venus orbital period in days
+	private static final double EARTH_PERIOD = 365.24; // Earth orbital period in days
+	private static final double MARS_PERIOD = 687; // Mars orbital period in days
+	private static final double JUPITER_PERIOD = 4333; // Jupiter orbital period in days
+	private static final double SATURN_PERIOD = 10759; // Saturn orbital period in days
+	private static final double URANUS_PERIOD = 30687; // Uranus orbital period in days
+	private static final double NEPTUNE_PERIOD = 60190; // Neptune orbital period in days
+	private static final double MOON_PERIOD = 27.3; // Moon orbital period around Earth in days
 
 	// Scaling factors
-	private static final double DISTANCE_SCALE = 1e-6;  // Scale for orbital distances (affects the size of the orbit)
-	private static final double SPEED_SCALE = 1e-2;     // Scale for angular velocity (affects rotation speed)
+	private static final double DISTANCE_SCALE = 1e-6; // Scale for orbital distances (affects the size of the orbit)
+	private static final double SPEED_SCALE = 1e-2; // Scale for angular velocity (affects rotation speed)
 	// Calculate angular velocities
 	private static final double EARTH_ANGULAR_VELOCITY = 2 * Math.PI / EARTH_PERIOD; // radians per day
 	private static final double MOON_ANGULAR_VELOCITY = EARTH_ANGULAR_VELOCITY * (EARTH_PERIOD / MOON_PERIOD);
 	private double simulationTime;
 //	private double timeSpeed = 525960; // Earth completes orbit in 60 seconds if the distance is set to real values
-	private double timeSpeed = 525960 * (30 / EARTH_DISTANCE); // Earth completes orbit in 60 seconds if the distance is set to real values
-
-
+	private double timeSpeed = 525960 * (30 / EARTH_DISTANCE); // Earth completes orbit in 60 seconds if the distance is
+																// set to real values
 
 	private AnimationTimer animationTimer;
 	private PerspectiveCamera camera;
@@ -170,6 +174,7 @@ public class Main extends Application {
 	private Text simulationTimeText;
 	private int earthRotations = 0;
 	private int moonOrbits = 0;
+	private Mover cameraMover;
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -178,7 +183,6 @@ public class Main extends Application {
 		timeSpeed = 525960 * 0.0002000666;
 		timeSpeed = 105.2;
 
-		
 		this.primaryStage = primaryStage;
 		world = new Group();
 		setPlanets();
@@ -245,64 +249,67 @@ public class Main extends Application {
 
 		// Always update the text to face the camera
 	}
-	
-
 
 	private void setAnimation() {
-	    animationTimer = new AnimationTimer() {
+		animationTimer = new AnimationTimer() {
 
-	        @Override
-	        public void handle(long now) {
-	            if (!pause) {
-	                // Update the position of each sphere
-	                sunToMercuryMover.update(timeSpeed);
-	                sunToVenusMover.update(timeSpeed);
-	                sunToEarthMover.update(timeSpeed);
-	                sunToMarsMover.update(timeSpeed);
-	                sunToJupiterMover.update(timeSpeed);
-	                sunToSaturnMover.update(timeSpeed);
-	                sunToUranusMover.update(timeSpeed);
-	                sunToNeptuneMover.update(timeSpeed);
+			@Override
+			public void handle(long now) {
+				if (!pause) {
+					// Update the position of each sphere
+					sunToMercuryMover.update(timeSpeed);
+					sunToVenusMover.update(timeSpeed);
+					sunToEarthMover.update(timeSpeed);
+					sunToMarsMover.update(timeSpeed);
+					sunToJupiterMover.update(timeSpeed);
+					sunToSaturnMover.update(timeSpeed);
+					sunToUranusMover.update(timeSpeed);
+					sunToNeptuneMover.update(timeSpeed);
 
-	                // Update the position of the moons
-	                earthToMoonMover.update(timeSpeed);
-	                jupiterToIoMover.update(timeSpeed);
-	                jupiterToEuropaMover.update(timeSpeed);
+					// Update the position of the moons
+					earthToMoonMover.update(timeSpeed);
+					jupiterToIoMover.update(timeSpeed);
+					jupiterToEuropaMover.update(timeSpeed);
 
-	                // Update rotators and precessors
-	                sunRotator.updateRotation(timeSpeed);
-	                mercuryRotator.updateRotation(timeSpeed);
-	                venusRotator.updateRotation(timeSpeed);
-	                earthRotator.updateRotation(EARTH_ANGULAR_VELOCITY * timeSpeed);
-	                moonRotator.updateRotation(MOON_ANGULAR_VELOCITY * timeSpeed);
-	                marsRotator.updateRotation(timeSpeed);
-	                jupiterRotator.updateRotation(timeSpeed);
-	                saturnRotator.updateRotation(timeSpeed);
-	                uranusRotator.updateRotation(timeSpeed);
-	                neptuneRotator.updateRotation(timeSpeed);
-	                ioRotator.updateRotation(timeSpeed);
-	                europaRotator.updateRotation(timeSpeed);
+					cameraMover.update(timeSpeed);
+					ringJupiter.update(saturn);
+					
+					System.out.println(cameraMover.getMovedObject().getTranslateX());
+					camera.setTranslateX(cameraX + cameraMover.getMovedObject().getTranslateX());
+					camera.setTranslateY(cameraY +cameraMover.getMovedObject().getTranslateY());
+					camera.setTranslateZ(cameraZ +cameraMover.getMovedObject().getTranslateZ());
+					
+					// Update rotators and precessors
+					sunRotator.updateRotation(timeSpeed);
+					mercuryRotator.updateRotation(timeSpeed);
+					venusRotator.updateRotation(timeSpeed);
+					earthRotator.updateRotation(EARTH_ANGULAR_VELOCITY * timeSpeed);
+					moonRotator.updateRotation(MOON_ANGULAR_VELOCITY * timeSpeed);
+					marsRotator.updateRotation(timeSpeed);
+					jupiterRotator.updateRotation(timeSpeed);
+					saturnRotator.updateRotation(timeSpeed);
+					uranusRotator.updateRotation(timeSpeed);
+					neptuneRotator.updateRotation(timeSpeed);
+					ioRotator.updateRotation(timeSpeed);
+					europaRotator.updateRotation(timeSpeed);
 
-	                sunPrecessor.updatePrecession(timeSpeed);
-	                mercuryPrecessor.updatePrecession(timeSpeed);
-	                venusPrecessor.updatePrecession(timeSpeed);
-	                earthPrecessor.updatePrecession(timeSpeed);
-	                marsPrecessor.updatePrecession(timeSpeed);
-	                jupiterPrecessor.updatePrecession(timeSpeed);
-	                saturnPrecessor.updatePrecession(timeSpeed);
-	                uranusPrecessor.updatePrecession(timeSpeed);
-	                neptunePrecessor.updatePrecession(timeSpeed);
+					sunPrecessor.updatePrecession(timeSpeed);
+					mercuryPrecessor.updatePrecession(timeSpeed);
+					venusPrecessor.updatePrecession(timeSpeed);
+					earthPrecessor.updatePrecession(timeSpeed);
+					marsPrecessor.updatePrecession(timeSpeed);
+					jupiterPrecessor.updatePrecession(timeSpeed);
+					saturnPrecessor.updatePrecession(timeSpeed);
+					uranusPrecessor.updatePrecession(timeSpeed);
+					neptunePrecessor.updatePrecession(timeSpeed);
 
-	                ringJupiter.update(jupiter);
-
-	                // Update simulation time text
-	                updateTextField();
-	            }
-	        }
-	    };
-	    animationTimer.start();
+					// Update simulation time text
+					updateTextField();
+				}
+			}
+		};
+		animationTimer.start();
 	}
-
 
 	// Method to update the rotation of the simulation time text so that it always
 	// faces the camera
@@ -336,10 +343,9 @@ public class Main extends Application {
 		world.getChildren().add(moon.getSphere());
 		world.getChildren().add(io.getSphere());
 		world.getChildren().add(europa.getSphere());
+		world.getChildren().add(cameraObject.getSphere());
 	}
 
-
-	
 	private void updateTextField() {
 		simulationTime += timeSpeed / 360.24;
 		double years = simulationTime / EARTH_PERIOD;
@@ -350,7 +356,8 @@ public class Main extends Application {
 		moonOrbits = (int) (simulationTime / MOON_PERIOD);
 
 		// Update the text
-		simulationTimeText.setText(String.format("Time: %.2f years, %.2f days\nEarth Rotations: %d\nMoon Orbits: %d", years, days, earthRotations, moonOrbits));
+		simulationTimeText.setText(String.format("Time: %.2f years, %.2f days\nEarth Rotations: %d\nMoon Orbits: %d",
+				years, days, earthRotations, moonOrbits));
 
 		// Get the camera's position
 		Point3D cameraPosition = new Point3D(camera.getTranslateX(), camera.getTranslateY(), camera.getTranslateZ());
@@ -358,23 +365,30 @@ public class Main extends Application {
 		// Get the camera's rotation (pitch, yaw)
 		Rotate rotation = (Rotate) camera.getTransforms().get(0); // Assuming the first transform is the rotation
 		double yaw = rotation.getAngle(); // You may need to calculate this based on camera's transformations
-		double pitch = rotation.getAngle(); // Calculate the pitch accordingly (could be another rotation around the X-axis)
+		double pitch = rotation.getAngle(); // Calculate the pitch accordingly (could be another rotation around the
+											// X-axis)
 
 		// Update the text with simulation time and camera info
-		simulationTimeText
-				.setText(String.format("Time: %.2f years, %.2f days\nEarth Rotations: %d\nMoon Orbits: %d\n\nCamera Position: (%.2f, %.2f, %.2f)\nYaw: %.2f\nPitch: %.2f",
-						years, days, earthRotations, moonOrbits, cameraPosition.getX(), cameraPosition.getY(), cameraPosition.getZ(), yaw, pitch));
+		simulationTimeText.setText(String.format(
+				"Time: %.2f years, %.2f days\nEarth Rotations: %d\nMoon Orbits: %d\n\nCamera Position: (%.2f, %.2f, %.2f)\nYaw: %.2f\nPitch: %.2f",
+				years, days, earthRotations, moonOrbits, cameraPosition.getX(), cameraPosition.getY(),
+				cameraPosition.getZ(), yaw, pitch));
 	}
 
 	private void setCamera() {
+		cameraX = -2750;
+		cameraY = -750;
+		cameraZ = -1200;
 		rotateYaw = new Rotate(yaw, Rotate.Y_AXIS);
 		rotatePitch = new Rotate(pitch, Rotate.X_AXIS);
 		camera = new PerspectiveCamera(true);
 		camera.setFarClip(50000);
 		camera.setNearClip(0.1);
-		camera.setTranslateX(-2750);
-		camera.setTranslateY(-750);
-		camera.setTranslateZ(-1200);
+		camera.setTranslateX(cameraX);
+		camera.setTranslateY(cameraY);
+		camera.setTranslateZ(cameraZ);
+		
+		
 
 		camera.getTransforms().setAll(rotateYaw, rotatePitch);
 	}
@@ -395,8 +409,9 @@ public class Main extends Application {
 		moon = new PhysicsSphere(1.7371 * sizeScale, 5, Color.GRAY, 0, 0, 0);
 		io = new PhysicsSphere(1.8216 * sizeScale, 8, Color.YELLOW, 0, 0, 0);
 		europa = new PhysicsSphere(1.5608 * sizeScale, 7, Color.WHITE, 0, 0, 0);
+
+		cameraObject = new PhysicsSphere(300, 9, Color.GRAY, 0, 0, 0);
 	}
-	
 
 	public void setTraces() {
 		double strokeWidth = 2.0; // Width of the trace lines
@@ -460,6 +475,8 @@ public class Main extends Application {
 		jupiterToIoMover = new Mover();
 		jupiterToEuropaMover = new Mover();
 
+		cameraMover = new Mover();
+
 		sunToMercuryMover.move(sun.getSphere(), mercury.getSphere(), 300, 47.36 * speedScale, 0, 0.1);
 		sunToVenusMover.move(sun.getSphere(), venus.getSphere(), 550, 35.02 * speedScale, 0, 0.1);
 		sunToEarthMover.move(sun.getSphere(), earth.getSphere(), 800, 29.78 * speedScale, 0, 0.1);
@@ -469,9 +486,13 @@ public class Main extends Application {
 		sunToUranusMover.move(sun.getSphere(), uranus.getSphere(), 3500, 6.81 * speedScale, 0, 0.1);
 		sunToNeptuneMover.move(sun.getSphere(), neptune.getSphere(), 4200, 5.43 * speedScale, 0, 0.1);
 
-		earthToMoonMover.move(earth.getSphere(), moon.getSphere(), 125, 1.022 * speedScale, 0, 0.5);
+		cameraMover.move(sun.getSphere(), cameraObject.getSphere(), 3000,300 * speedScale, speedScale, 0.1);
+		
+		earthToMoonMover.move(earth.getSphere(), moon.getSphere(), 125, 100.022 * speedScale, 0, 0.5);
 		jupiterToIoMover.move(jupiter.getSphere(), io.getSphere(), 20, 17.34 * speedScale, 0, 0.5);
 		jupiterToEuropaMover.move(jupiter.getSphere(), europa.getSphere(), 25, 13.74 * speedScale, 0, 0.5);
+
+		
 	}
 
 	private void setRotator() {
@@ -481,7 +502,7 @@ public class Main extends Application {
 		sunRotator = new Rotator(sun.getSphere(), 0.05 * rotationScale, 0.05 * rotationScale, 0);
 		mercuryRotator = new Rotator(mercury.getSphere(), 0.1 * rotationScale, 0.1 * rotationScale, 0);
 		venusRotator = new Rotator(venus.getSphere(), 0.1 * rotationScale, 0.1 * rotationScale, 0);
-		earthRotator = new Rotator(earth.getSphere(), 1 * rotationScale, 0.05 * rotationScale, 0);
+		earthRotator = new Rotator(earth.getSphere(), 1 * rotationScale, 36.5 * rotationScale, 0);
 		marsRotator = new Rotator(mars.getSphere(), 0.15 * rotationScale, 0.15 * rotationScale, 0);
 		jupiterRotator = new Rotator(jupiter.getSphere(), 0.05 * rotationScale, 0.05 * rotationScale, 0);
 		saturnRotator = new Rotator(saturn.getSphere(), 0.05 * rotationScale, 0.05 * rotationScale, 0);
@@ -491,7 +512,7 @@ public class Main extends Application {
 		ioRotator = new Rotator(io.getSphere(), 0.2 * rotationScale, 0.2 * rotationScale, 0);
 		europaRotator = new Rotator(europa.getSphere(), 0.2 * rotationScale, 0.2 * rotationScale, 0);
 	}
-	
+
 //	private void setRotator() {
 //	    // Skalierungsfaktor für die Rotationsgeschwindigkeit
 //	    double rotationScale = 1e-2;
@@ -517,7 +538,6 @@ public class Main extends Application {
 //	    // scene.getChildren().add(tracePane);  // Uncomment and adjust according to your layout setup
 //	}
 
-
 	private void setPlanetsPhongMaterial() {
 		sun = setCelestialBodyImages(sun, "sun");
 		mercury = setCelestialBodyImages(mercury, "mercury");
@@ -525,12 +545,12 @@ public class Main extends Application {
 		earth = setCelestialBodyImages(earth, "earth");
 		mars = setCelestialBodyImages(mars, "mars");
 		jupiter = setCelestialBodyImages(jupiter, "jupiter");
-//	    saturn =    setCelestialBodyImages(saturn, "saturn");
-//	    uranus =     setCelestialBodyImages(uranus, "uranus");
-//	    neptune =    setCelestialBodyImages(neptune, "neptune");
-//	    moon =    setCelestialBodyImages(moon, "moon");
-//	    io =    setCelestialBodyImages(io, "io");
-//	    europa =    setCelestialBodyImages(europa, "europa");
+		saturn = setCelestialBodyImages(saturn, "saturn");
+		uranus = setCelestialBodyImages(uranus, "uranus");
+		neptune = setCelestialBodyImages(neptune, "neptune");
+		moon = setCelestialBodyImages(moon, "moon");
+		io = setCelestialBodyImages(io, "io");
+		europa = setCelestialBodyImages(europa, "europa");
 
 	}
 
@@ -551,7 +571,7 @@ public class Main extends Application {
 	}
 
 	private PhysicsSphere setCelestialBodyImages(PhysicsSphere celestialBody, String celestialBodyType) {
-		Image image =  null;
+		Image image = null;
 
 		// Select the appropriate image based on the type
 		switch (celestialBodyType.toLowerCase()) {
@@ -573,24 +593,24 @@ public class Main extends Application {
 		case "jupiter":
 			image = new Image(getClass().getResource("/jupiter.jpeg").toExternalForm());
 			break;
-//		case "saturn":
-//			image = new Image(getClass().getResource("/saturn_image.jpeg").toExternalForm());
-//			break;
-//		case "uranus":
-//			image = new Image(getClass().getResource("/uranus_image.jpeg").toExternalForm());
-//			break;
-//		case "neptune":
-//			image = new Image(getClass().getResource("/neptune_image.jpeg").toExternalForm());
-//			break;
-//		case "moon":
-//			image = new Image(getClass().getResource("/moon_image.jpeg").toExternalForm());
-//			break;
-//		case "io":
-//			image = new Image(getClass().getResource("/io_image.jpeg").toExternalForm());
-//			break;
-//		case "europa":
-//			image = new Image(getClass().getResource("/europa_image.jpeg").toExternalForm());
-//			break;
+		case "saturn":
+			image = new Image(getClass().getResource("/saturn.jpeg").toExternalForm());
+			break;
+		case "uranus":
+			image = new Image(getClass().getResource("/uranus.jpeg").toExternalForm());
+			break;
+		case "neptune":
+			image = new Image(getClass().getResource("/neptun.jpeg").toExternalForm());
+			break;
+		case "moon":
+			image = new Image(getClass().getResource("/moon.jpeg").toExternalForm());
+			break;
+		case "io":
+			image = new Image(getClass().getResource("/io.jpeg").toExternalForm());
+			break;
+		case "europa":
+			image = new Image(getClass().getResource("/europa.jpeg").toExternalForm());
+			break;
 		default:
 			System.out.println("No image found for: " + celestialBodyType);
 			// No image if the body type is not recognized
@@ -660,8 +680,10 @@ public class Main extends Application {
 
 			// Update the camera's position based on its current orientation and scroll
 			// input
-			camera.setTranslateX(camera.getTranslateX() + forwardX);
-			camera.setTranslateZ(camera.getTranslateZ() + forwardZ);
+			cameraX += forwardX;
+			cameraY += forwardZ;
+			camera.setTranslateX(camera.getTranslateX() + cameraX);
+			camera.setTranslateZ(camera.getTranslateZ() + cameraZ);
 
 		});
 
@@ -707,10 +729,14 @@ public class Main extends Application {
 
 			double strafeX = cosYaw * dx;
 			double strafeZ = -sinYaw * dx;
+			
+			cameraX +=forwardX + strafeX;
+			cameraY += dy;
+			cameraZ +=  forwardZ + strafeZ;
 
-			camera.setTranslateX(camera.getTranslateX() + forwardX + strafeX);
-			camera.setTranslateY(camera.getTranslateY() + dy);
-			camera.setTranslateZ(camera.getTranslateZ() + forwardZ + strafeZ);
+			camera.setTranslateX(camera.getTranslateX() + cameraX );
+			camera.setTranslateY(camera.getTranslateY() + cameraY);
+			camera.setTranslateZ(camera.getTranslateZ() + cameraZ);
 		});
 	}
 
